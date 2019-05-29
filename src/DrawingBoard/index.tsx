@@ -1,4 +1,5 @@
-import React from 'react';
+import React from 'react'
+import {SliderPicker, SketchPicker, ColorChangeHandler} from 'react-color'
 import s from './DrawingBoard.module.css'
 
 type CanvasInfo = {
@@ -6,7 +7,11 @@ type CanvasInfo = {
   canvasContext: CanvasRenderingContext2D,
 }
 
-class DrawingBoard extends React.Component<{contextID: '2d'}> {
+type State = {lineThickness: number}
+
+class DrawingBoard extends React.Component<{contextID: '2d'}, State> {
+
+  state = {lineThickness: 1}
 
   canvases: Array<CanvasInfo> = []
 
@@ -44,7 +49,7 @@ class DrawingBoard extends React.Component<{contextID: '2d'}> {
   handleOnCanvasMouseEnter = (ev: MouseEvent, canvasInfo: CanvasInfo) => {
     const {canvasContext, ref} = canvasInfo
     const {offsetX, offsetY} = ev
-    canvasContext.beginPath() // resets path list
+    canvasContext.beginPath() // resets the internal path list
     canvasContext.moveTo(offsetX, offsetY) // initializes the path coordinate
   }
 
@@ -73,11 +78,40 @@ class DrawingBoard extends React.Component<{contextID: '2d'}> {
     })
   }
 
+  handlePathParams = (ev: React.ChangeEvent<HTMLInputElement>) => {
+    const paramName = ev.target.name as keyof State
+    switch (paramName) {
+      case 'lineThickness':
+        const lineThickness = Number(ev.target.value)
+        this.setState({ lineThickness })
+        this.canvases.forEach((canvasInfo) => {
+          const {canvasContext} = canvasInfo
+          canvasContext.lineWidth = lineThickness
+        })
+        break;
+      
+      default: 
+        break;
+    }
+  }
+
+  handleStrokeColorChange: ColorChangeHandler = (color) => {
+    this.canvases.forEach((canvasInfo) => {
+      const {canvasContext} = canvasInfo
+      canvasContext.strokeStyle = color.hex
+    })
+  }
+  
   render() {
+    const {lineThickness} = this.state
     return (
       <div className={s.DrawingBoardContainer}>
-        <div>
+        <div className={s.CanvasOptionsContainer}>
           <button onClick={this.clearAllBoards} className={s.CanvasOption}>Clear</button>
+          <input name='lineThickness' value={lineThickness} type='range' min={1} max={10} step={1} onChange={this.handlePathParams} />
+          <div className={s.ColorPickerContainer}>
+            <SliderPicker onChangeComplete={this.handleStrokeColorChange} />
+          </div>
         </div>
         <div className={s.WrapperOfDrawingBoards}>
           <canvas height={350} width={350} className={s.DrawingBoard} ref={this.setDrawingBoardRef} />
