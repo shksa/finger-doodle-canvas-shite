@@ -27,12 +27,12 @@ class DrawingBoard extends React.Component<{contextID: '2d'}, State> {
     this.canvases.push({ref: canvasInst, canvasContext})
     console.log('canvas element ref has been set as instance property')
     this.attachDrawingBoardEvtListners()
+    this.attachWindowEvtListeners()
   }
 
   attachDrawingBoardEvtListners() {
     const handleOnCanvasMouseMove = this.handleOnCanvasMouseMove
     const handleOnCanvasMouseEnter = this.handleOnCanvasMouseEnter
-    const resizeCanvasSize = this.resizeCanvasSize
     this.canvases.forEach((canvasInfo) => {
       const {ref} = canvasInfo
       ref.onmouseenter = function (this: GlobalEventHandlers, ev: MouseEvent) {
@@ -41,22 +41,27 @@ class DrawingBoard extends React.Component<{contextID: '2d'}, State> {
       ref.onmousemove = function (this: GlobalEventHandlers, ev: MouseEvent) {
         handleOnCanvasMouseMove(ev, canvasInfo)
       }
-      ref.onmouseleave = function (this: GlobalEventHandlers, ev: MouseEvent) {
-        
-      }
     })
+  }
+
+  attachWindowEvtListeners = () => {
+    const handleWindowResize = this.handleWindowResize
     window.onresize = function (this: GlobalEventHandlers, ev: UIEvent) {
-      const {innerWidth, innerHeight} = ev.currentTarget as Window
-      if (innerWidth < 400) {
-        resizeCanvasSize(200, 200)
-      } else {
-        resizeCanvasSize(350, 350)
-      }
+      handleWindowResize(ev.currentTarget as Window)
     }
   }
 
-  handleOnCanvasMouseEnter = (ev: MouseEvent, canvasInfo: CanvasInfo) => {
-    const {canvasContext, ref} = canvasInfo
+  handleWindowResize = (windowEvt: Window) => {
+    const {innerWidth} = windowEvt
+    if (innerWidth < 400) {
+      this.resizeCanvasSize(200, 200)
+    } else {
+      this.resizeCanvasSize(350, 350)
+    }
+  }
+
+  handleOnCanvasMouseEnter(ev: MouseEvent, canvasInfo: CanvasInfo) {
+    const {canvasContext} = canvasInfo
     const {offsetX, offsetY} = ev
     canvasContext.beginPath() // resets the internal path list
     canvasContext.moveTo(offsetX, offsetY) // initializes the path coordinate
