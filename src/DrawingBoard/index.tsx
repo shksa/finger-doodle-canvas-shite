@@ -1,5 +1,5 @@
 import React from 'react'
-import {SliderPicker, SketchPicker, ColorChangeHandler} from 'react-color'
+import {SliderPicker, ColorChangeHandler} from 'react-color'
 import s from './DrawingBoard.module.css'
 
 type CanvasInfo = {
@@ -7,11 +7,11 @@ type CanvasInfo = {
   canvasContext: CanvasRenderingContext2D,
 }
 
-type State = {lineThickness: number}
+type State = {lineThickness: number, canvasWidth: number, canvasHeight: number}
 
 class DrawingBoard extends React.Component<{contextID: '2d'}, State> {
 
-  state = {lineThickness: 1}
+  state = {lineThickness: 1, canvasWidth: 350, canvasHeight: 350}
 
   canvases: Array<CanvasInfo> = []
 
@@ -32,6 +32,7 @@ class DrawingBoard extends React.Component<{contextID: '2d'}, State> {
   attachDrawingBoardEvtListners() {
     const handleOnCanvasMouseMove = this.handleOnCanvasMouseMove
     const handleOnCanvasMouseEnter = this.handleOnCanvasMouseEnter
+    const resizeCanvasSize = this.resizeCanvasSize
     this.canvases.forEach((canvasInfo) => {
       const {ref} = canvasInfo
       ref.onmouseenter = function (this: GlobalEventHandlers, ev: MouseEvent) {
@@ -44,6 +45,14 @@ class DrawingBoard extends React.Component<{contextID: '2d'}, State> {
         
       }
     })
+    window.onresize = function (this: GlobalEventHandlers, ev: UIEvent) {
+      const {innerWidth, innerHeight} = ev.currentTarget as Window
+      if (innerWidth < 400) {
+        resizeCanvasSize(200, 200)
+      } else {
+        resizeCanvasSize(350, 350)
+      }
+    }
   }
 
   handleOnCanvasMouseEnter = (ev: MouseEvent, canvasInfo: CanvasInfo) => {
@@ -78,6 +87,10 @@ class DrawingBoard extends React.Component<{contextID: '2d'}, State> {
     })
   }
 
+  resizeCanvasSize = (canvasWidth: number, canvasHeight: number) => {
+    this.setState({ canvasWidth, canvasHeight })
+  }
+
   handlePathParams = (ev: React.ChangeEvent<HTMLInputElement>) => {
     const paramName = ev.target.name as keyof State
     switch (paramName) {
@@ -103,7 +116,7 @@ class DrawingBoard extends React.Component<{contextID: '2d'}, State> {
   }
   
   render() {
-    const {lineThickness} = this.state
+    const {lineThickness, canvasHeight, canvasWidth} = this.state
     return (
       <div className={s.DrawingBoardContainer}>
         <div className={s.CanvasOptionsContainer}>
@@ -114,8 +127,8 @@ class DrawingBoard extends React.Component<{contextID: '2d'}, State> {
           </div>
         </div>
         <div className={s.WrapperOfDrawingBoards}>
-          <canvas height={350} width={350} className={s.DrawingBoard} ref={this.setDrawingBoardRef} />
-          <canvas height={350} width={350} id='UnDotted' className={s.DrawingBoard} ref={this.setDrawingBoardRef} />
+          <canvas height={canvasHeight} width={canvasWidth} className={s.DrawingBoard} ref={this.setDrawingBoardRef} />
+          <canvas height={canvasHeight} width={canvasWidth} id='UnDotted' className={s.DrawingBoard} ref={this.setDrawingBoardRef} />
         </div>
       </div>
       );
