@@ -1,0 +1,32 @@
+.App {
+  background-color: wheat;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.OkButton {
+  border-radius: 0.3rem;
+  background-color: lightgreen;
+  font-size: 1rem;
+  padding: 0.5rem 1rem;
+  cursor: pointer;
+  border: 2px solid darkgreen;
+  color: darkgreen;
+  font-weight: bolder;
+}
+
+.OnErrorFallback {
+  border: 3px solid teal;
+  border-radius: 0.3rem;
+  display: flex;
+  padding: 1rem;
+  flex-direction: column;
+  align-items: center;
+  background-color: white;
+}
+
+.OnErrorFallback h2 {
+  text-align: center;
+}
