@@ -10,14 +10,6 @@ class DrawingBoard extends React.Component<{contextID: '2d'}> {
 
   canvases: Array<CanvasInfo> = []
 
-  prevX = -Infinity
-  prevY = -Infinity
-
-  setPrevCoords = (x: number, y: number) => {
-    this.prevX = x
-    this.prevY = y
-  }
-
   setDrawingBoardRef = (canvasInst: HTMLCanvasElement | null) => {
     if (!canvasInst) {
       return console.log('canvas element no longer exists')
@@ -35,7 +27,6 @@ class DrawingBoard extends React.Component<{contextID: '2d'}> {
   attachDrawingBoardEvtListners() {
     const handleOnCanvasMouseMove = this.handleOnCanvasMouseMove
     const handleOnCanvasMouseEnter = this.handleOnCanvasMouseEnter
-    const setPrevCoords = this.setPrevCoords
     this.canvases.forEach((canvasInfo) => {
       const {ref} = canvasInfo
       ref.onmouseenter = function (this: GlobalEventHandlers, ev: MouseEvent) {
@@ -53,8 +44,8 @@ class DrawingBoard extends React.Component<{contextID: '2d'}> {
   handleOnCanvasMouseEnter = (ev: MouseEvent, canvasInfo: CanvasInfo) => {
     const {canvasContext, ref} = canvasInfo
     const {offsetX, offsetY} = ev
-    canvasContext.beginPath()
-    canvasContext.moveTo(offsetX, offsetY)
+    canvasContext.beginPath() // resets path list
+    canvasContext.moveTo(offsetX, offsetY) // initializes the path coordinate
   }
 
   handleOnCanvasMouseMove = (ev: MouseEvent, canvasInfo: CanvasInfo) => {
@@ -66,7 +57,7 @@ class DrawingBoard extends React.Component<{contextID: '2d'}> {
 
   drawIn2D(ctx: CanvasRenderingContext2D, x: number, y: number, canvasID: string) {
     if (canvasID === 'UnDotted') {
-      ctx.lineTo(x, y)
+      ctx.lineTo(x, y) // from previous path coord to x, y. Previous path coord is stored internally in the path list maintained by calling the beginPath()
       ctx.stroke()
     } else {
       ctx.beginPath()
