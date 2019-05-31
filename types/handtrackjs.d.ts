@@ -18,7 +18,7 @@ export interface Model {
   getFPS: () => number,
   renderPredictions: (predictions: Predictions, canvas: HTMLCanvasElement, context: CanvasRenderingContext2D, inputSource: InputSource) => void,
   getModelParameters: () => ModelParams,
-  setModelParameters: (modelParams: ModelParams) => void
+  setModelParameters: (modelParams: Partial<ModelParams>) => void
   dispose: () => void
 }
 

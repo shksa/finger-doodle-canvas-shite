@@ -13,7 +13,7 @@ type State = {
   isVideoPlaying: boolean, 
   detectionModel: handTrack.Model | null, 
   isModelLoaded: boolean,
-  modelParams: Partial<handTrack.ModelParams>
+  modelParams: {scoreThreshold: number, flipHorizontal: boolean}
 }
 
 type Props = {contextID: '2d'}
@@ -25,7 +25,7 @@ class DrawingBoard extends React.Component<Props, State> {
     this.state = {
       lineThickness: 1, canvasWidth: 507, canvasHeight: 380, 
       isVideoPlaying: false, detectionModel: null, isModelLoaded: false,
-      modelParams: {scoreThreshold: 0.7, flipHorizontal: false}
+      modelParams: {scoreThreshold: 0.7, flipHorizontal: true}
     }
   }
 
@@ -122,6 +122,7 @@ class DrawingBoard extends React.Component<Props, State> {
     this.canvases.forEach((canvasInfo) => {
       const {canvasContext, ref} = canvasInfo
       canvasContext.clearRect(0, 0, ref.width, ref.height)
+      canvasContext.beginPath()
     })
   }
 
@@ -130,7 +131,7 @@ class DrawingBoard extends React.Component<Props, State> {
   }
 
   handlePathParams = (ev: React.ChangeEvent<HTMLInputElement>) => {
-    const paramName = ev.target.name as keyof State
+    const paramName = ev.target.name
     switch (paramName) {
       case 'lineThickness':
         const lineThickness = Number(ev.target.value)
@@ -141,6 +142,12 @@ class DrawingBoard extends React.Component<Props, State> {
         })
         break;
       
+      case 'scoreThreshold':
+        const scoreThreshold = Number(ev.target.value) / 100
+        const newModelParams = {...this.state.modelParams, scoreThreshold}
+        this.setState({modelParams: newModelParams})
+        this.state.detectionModel!.setModelParameters(newModelParams)
+        break;
       default: 
         break;
     }
@@ -189,14 +196,32 @@ class DrawingBoard extends React.Component<Props, State> {
     const {detectionModel, isVideoPlaying} = this.state
     const inputSource = this.videoElem
     const predictions = await detectionModel!.detect(inputSource)
-    detectionModel!.renderPredictions(predictions, this.canvases[1].ref, this.canvases[1].canvasContext, inputSource)
+    // detectionModel!.renderPredictions(predictions, this.canvases[1].ref, this.canvases[1].canvasContext, inputSource)
+    this.drawFingerPointer(predictions)
     if (isVideoPlaying && inputSource) {
       window.requestAnimationFrame(this.runDetection)
     }
   }
+
+  drawFingerPointer = (predictions: handTrack.Predictions) => {
+    if (predictions.length === 0) {
+      return
+    }
+    // const predictions = predictions.sort((a, b) => {
+    //   const [a_x, a_y] = a.bbox
+    //   const [b_x, b_y] = b.bbox
+    //   if (a_x < b_x && a_y < b_y) {
+    //     return -1
+    //   } else {
+    //     return 1
+    //   }
+    // })
+    const [x, y] = predictions[0].bbox
+    this.drawIn2D(this.canvases[0].canvasContext, x, y, 'UnDotted')
+  }
   
   render() {
-    const {lineThickness, canvasHeight, canvasWidth, isVideoPlaying} = this.state
+    const {lineThickness, canvasHeight, canvasWidth, isVideoPlaying, modelParams} = this.state
     return (
       <div className={s.DrawingBoardContainer}>
         <div className={s.CanvasOptionsContainer}>
@@ -204,7 +229,14 @@ class DrawingBoard extends React.Component<Props, State> {
           <button onClick={this.handleVideoLifecycle} className={!isVideoPlaying ? s.CanvasOption: `${s.CanvasOption} ${s.StopVideo}`}>{
             isVideoPlaying ? 'Stop Video' : 'Start Video' 
           }</button>
-          <input name='lineThickness' value={lineThickness} type='range' min={1} max={10} step={1} onChange={this.handlePathParams} />
+          <label>
+            <h3>Line Thickness</h3>
+            <input name='lineThickness' value={lineThickness} type='range' min={1} max={10} step={1} onChange={this.handlePathParams} />
+          </label>
+          <label>
+            <h3>Model Threshold</h3>
+            <input name='scoreThreshold' value={modelParams.scoreThreshold * 100} type='range' min={1} max={99} step={1} onChange={this.handlePathParams} />
+          </label>
           <div className={s.ColorPickerContainer}>
             <SliderPicker onChangeComplete={this.handleStrokeColorChange} />
           </div>

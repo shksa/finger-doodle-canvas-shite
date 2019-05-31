@@ -12,7 +12,6 @@ html {
     sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  height: 100vh;
 }
 
 /*
@@ -28,7 +27,7 @@ html {
 
 body {
   border: 5px solid tomato;
-  height: 100%;
+  min-height: 100vh;
   margin: 0;
 }
 
