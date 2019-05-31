@@ -36,6 +36,12 @@
   font-weight: bolder;
 }
 
+.StopVideo {
+  background-color: red;
+  border: 2px solid lightcoral;
+  color: white;
+}
+
 .CanvasOptionsContainer {
   display: flex;
   justify-content: space-evenly;

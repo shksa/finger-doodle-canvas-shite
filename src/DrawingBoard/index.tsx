@@ -1,5 +1,6 @@
 import React from 'react'
 import {SliderPicker, ColorChangeHandler} from 'react-color'
+import * as handTrack from 'handtrackjs'
 import s from './DrawingBoard.module.css'
 
 type CanvasInfo = {
@@ -7,13 +8,46 @@ type CanvasInfo = {
   canvasContext: CanvasRenderingContext2D,
 }
 
-type State = {lineThickness: number, canvasWidth: number, canvasHeight: number}
+type State = {
+  lineThickness: number, canvasWidth: number, canvasHeight: number, 
+  isVideoPlaying: boolean, 
+  detectionModel: handTrack.Model | null, 
+  isModelLoaded: boolean,
+  modelParams: Partial<handTrack.ModelParams>
+}
 
-class DrawingBoard extends React.Component<{contextID: '2d'}, State> {
+type Props = {contextID: '2d'}
 
-  state = {lineThickness: 1, canvasWidth: 350, canvasHeight: 350}
+class DrawingBoard extends React.Component<Props, State> {
+
+  constructor(props: Props) {
+    super(props)
+    this.state = {
+      lineThickness: 1, canvasWidth: 507, canvasHeight: 380, 
+      isVideoPlaying: false, detectionModel: null, isModelLoaded: false,
+      modelParams: {scoreThreshold: 0.7, flipHorizontal: false}
+    }
+  }
+
+  async componentDidMount() {
+    const {modelParams} = this.state
+    const model = await handTrack.load(modelParams)
+    console.log('detection model loaded!')
+    this.setState({detectionModel: model, isModelLoaded: true})
+  }
+
+  componentWillUnmount() {
+    const {detectionModel} = this.state
+    if (!detectionModel) {
+      return
+    }
+    detectionModel.dispose()
+    handTrack.stopVideo()
+  }
 
   canvases: Array<CanvasInfo> = []
+
+  videoElem!: HTMLVideoElement
 
   setDrawingBoardRef = (canvasInst: HTMLCanvasElement | null) => {
     if (!canvasInst) {
@@ -118,13 +152,58 @@ class DrawingBoard extends React.Component<{contextID: '2d'}, State> {
       canvasContext.strokeStyle = color.hex
     })
   }
+
+  setVideoEleRef = (instance: HTMLVideoElement | null) => {
+    if (!instance) {
+      return console.log('no instance has been found or instance has been destroyed')
+    }
+    this.videoElem = instance
+    console.log('video elem set as instance property')
+  }
+
+  handleVideoLifecycle = () => {
+    const {isVideoPlaying} = this.state
+    if (isVideoPlaying) {
+      this.stopVideo()
+    } else {
+      this.startVideo()
+    }
+  }
+
+  stopVideo = () => {
+    this.setState({isVideoPlaying: false})
+    handTrack.stopVideo()
+  }
+
+  startVideo = async() => {
+    const hasStarted = await handTrack.startVideo(this.videoElem)
+    if (!hasStarted) {
+      alert("Camera not available")
+      return console.log("Camera not available")
+    }
+    this.setState({isVideoPlaying: true})
+    this.runDetection()
+  }
+
+  runDetection = async() => {
+    const {detectionModel, isVideoPlaying} = this.state
+    const inputSource = this.videoElem
+    const predictions = await detectionModel!.detect(inputSource)
+    detectionModel!.renderPredictions(predictions, this.canvases[1].ref, this.canvases[1].canvasContext, inputSource)
+    if (isVideoPlaying && inputSource) {
+      window.requestAnimationFrame(this.runDetection)
+    }
+  }
   
   render() {
-    const {lineThickness, canvasHeight, canvasWidth} = this.state
+    const {lineThickness, canvasHeight, canvasWidth, isVideoPlaying} = this.state
     return (
       <div className={s.DrawingBoardContainer}>
         <div className={s.CanvasOptionsContainer}>
           <button onClick={this.clearAllBoards} className={s.CanvasOption}>Clear</button>
+          <button onClick={this.handleVideoLifecycle} className={!isVideoPlaying ? s.CanvasOption: `${s.CanvasOption} ${s.StopVideo}`}>{
+            isVideoPlaying ? 'Stop Video' : 'Start Video' 
+          }</button>
           <input name='lineThickness' value={lineThickness} type='range' min={1} max={10} step={1} onChange={this.handlePathParams} />
           <div className={s.ColorPickerContainer}>
             <SliderPicker onChangeComplete={this.handleStrokeColorChange} />
@@ -133,6 +212,7 @@ class DrawingBoard extends React.Component<{contextID: '2d'}, State> {
         <div className={s.WrapperOfDrawingBoards}>
           <canvas height={canvasHeight} width={canvasWidth} className={s.DrawingBoard} ref={this.setDrawingBoardRef} />
           <canvas height={canvasHeight} width={canvasWidth} id='UnDotted' className={s.DrawingBoard} ref={this.setDrawingBoardRef} />
+          <video height={canvasHeight} width={canvasWidth} style={{border: '2px solid black'}} ref={this.setVideoEleRef}></video>
         </div>
       </div>
       );
