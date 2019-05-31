@@ -32,16 +32,11 @@ class DrawingBoard extends React.Component<{contextID: '2d'}, State> {
 
   attachDrawingBoardEvtListners() {
     const handleOnCanvasMouseMove = this.handleOnCanvasMouseMove
-    const handleOnCanvasMouseStart = this.handleOnCanvasMouseStart
     let isMouseDown = false
     this.canvases.forEach((canvasInfo) => {
       const {ref, canvasContext} = canvasInfo
-      // ref.onmouseenter = function (this: GlobalEventHandlers, ev: MouseEvent) {
-      //   handleOnCanvasMouseEnter(ev, canvasInfo)
-      // }
       ref.onmousedown = function (this: GlobalEventHandlers, ev: MouseEvent) {
         isMouseDown = true
-        handleOnCanvasMouseStart(ev, canvasInfo)
       }
       ref.onmouseup = function (this: GlobalEventHandlers, ev: MouseEvent) {
         isMouseDown = false
@@ -69,13 +64,6 @@ class DrawingBoard extends React.Component<{contextID: '2d'}, State> {
     } else {
       this.resizeCanvasSize(350, 350)
     }
-  }
-
-  handleOnCanvasMouseStart(ev: MouseEvent, canvasInfo: CanvasInfo) {
-    const {canvasContext} = canvasInfo
-    const {offsetX, offsetY} = ev
-    canvasContext.beginPath() // resets the internal path list
-    canvasContext.moveTo(offsetX, offsetY) // initializes the path coordinate
   }
 
   handleOnCanvasMouseMove = (ev: MouseEvent, canvasInfo: CanvasInfo) => {
