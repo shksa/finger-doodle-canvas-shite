@@ -26,7 +26,7 @@ declare module 'handtrackjs' {
   export function load(modelParams?: Partial<ModelParams>): Promise<Model>
   export function startVideo(video: HTMLVideoElement): Promise<Status> // status
   export function stopVideo(): void
-}
+};
 
 type ModelParams = {
   flipHorizontal: boolean,   // flip e.g for video 

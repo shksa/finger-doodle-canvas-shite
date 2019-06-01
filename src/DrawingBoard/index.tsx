@@ -49,6 +49,10 @@ class DrawingBoard extends React.Component<Props, State> {
 
   videoElem!: HTMLVideoElement
 
+  fingerPosition: [number, number] = [0, 0]
+
+  drawingTimerID!: NodeJS.Timeout
+
   setDrawingBoardRef = (canvasInst: HTMLCanvasElement | null) => {
     if (!canvasInst) {
       return console.log('canvas element no longer exists')
@@ -180,6 +184,7 @@ class DrawingBoard extends React.Component<Props, State> {
   stopVideo = () => {
     this.setState({isVideoPlaying: false})
     handTrack.stopVideo()
+    clearInterval(this.drawingTimerID)
   }
 
   startVideo = async() => {
@@ -190,33 +195,47 @@ class DrawingBoard extends React.Component<Props, State> {
     }
     this.setState({isVideoPlaying: true})
     this.runDetection()
+    this.drawingTimerID = setInterval(this.drawFingerPointer, 300)
   }
 
   runDetection = async() => {
     const {detectionModel, isVideoPlaying} = this.state
     const inputSource = this.videoElem
     const predictions = await detectionModel!.detect(inputSource)
+    if (predictions.length) {
+      const bestPrediction = this.getBestPrediction(predictions)
+      const [x, y] = bestPrediction.bbox
+      this.calculateRunningAverage(x, y)
+    }
     // detectionModel!.renderPredictions(predictions, this.canvases[1].ref, this.canvases[1].canvasContext, inputSource)
-    this.drawFingerPointer(predictions)
     if (isVideoPlaying && inputSource) {
       window.requestAnimationFrame(this.runDetection)
     }
   }
 
-  drawFingerPointer = (predictions: handTrack.Predictions) => {
-    if (predictions.length === 0) {
-      return
-    }
-    // const predictions = predictions.sort((a, b) => {
-    //   const [a_x, a_y] = a.bbox
-    //   const [b_x, b_y] = b.bbox
-    //   if (a_x < b_x && a_y < b_y) {
-    //     return -1
-    //   } else {
-    //     return 1
-    //   }
-    // })
-    const [x, y] = predictions[0].bbox
+  calculateRunningAverage = (newX: number, newY: number) => {
+    const [x, y] = this.fingerPosition
+    const newAvgX = (x + newX) / 2
+    const newAvgY = (y + newY) / 2
+    this.fingerPosition[0] = newAvgX
+    this.fingerPosition[1] = newAvgY
+  }
+
+  getBestPrediction = (predictions: handTrack.Predictions) => {
+    const bestPrediction = predictions.sort((predA, predB) => {
+      const [predAx, predAy] = predA.bbox
+      const [predBx, predBy] = predB.bbox
+      if (predAx < predBx && predAy < predBy) {
+        return -1
+      } else {
+        return 1
+      }
+    })[0]
+    return bestPrediction
+  }
+
+  drawFingerPointer = () => {
+    const [x, y] = this.fingerPosition
     this.drawIn2D(this.canvases[0].canvasContext, x, y, 'UnDotted')
   }
   

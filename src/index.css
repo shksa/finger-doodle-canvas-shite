@@ -27,12 +27,7 @@ html {
 
 body {
   border: 5px solid tomato;
-  min-height: 100vh;
   margin: 0;
-}
-
-#root {
-  height: 100%;
 }
 
 h1,
